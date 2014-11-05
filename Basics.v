@@ -954,27 +954,6 @@ Fixpoint from_nat (b : nat) : binary :=
     | S n => incr (from_nat n)
   end.
 
-Theorem incr_unary_same : forall (n : binary), to_nat (incr n) = 1 + to_nat n.
-Proof.
-simpl.
-intros n.
-destruct n as [|n'|n'].
-reflexivity.
-unfold incr.
-simpl.
-reflexivity.
-Abort.
-
-Theorem nat_iso_l : forall (n : nat), to_nat (from_nat n) = n.
-Proof.
-Abort.
-
-Theorem incr_same_as_nat : forall (n : nat), 1 + n = to_nat (incr (from_nat n)).
-Proof.
-intros n.
-simpl.
-Abort.
-
 
 (* ###################################################################### *)
 (** * Optional Material *)

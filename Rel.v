@@ -147,7 +147,9 @@ Proof.
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
   induction Hmo as [| m' Hm'o].
-    (* FILL IN HERE *) Admitted.
+  - apply le_S. apply Hnm.
+  - apply le_S. apply IHHm'o.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional *)
@@ -159,7 +161,11 @@ Proof.
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
   induction o as [| o'].
-  (* FILL IN HERE *) Admitted.
+  - inversion Hmo.
+  - inversion Hmo.
+    + rewrite <- H0. apply le_S. apply Hnm.
+    + apply le_S. apply IHo'. apply H0.
+Qed.
 (** [] *)
 
 (** The transitivity of [le], in turn, can be used to prove some facts
@@ -176,7 +182,10 @@ Proof.
 Theorem le_S_n : forall n m,
   (S n <= S m) -> (n <= m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. inversion H.
+  + apply le_n.
+  + apply le_S_n. apply H.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (le_Sn_n_inf) *)
@@ -187,8 +196,15 @@ Proof.
     A formal proof of this is an optional exercise below, but try
     the informal proof without doing the formal proof first.
  
-    Proof:
-    (* FILL IN HERE *)
+    _Proof_: By induction on [n].
+
+    - First, suppose [n = 0]. Then, we must show that [~(S 0 <= 0)].
+      Now, assume [S 0 <= 0]. By the definition of [<=], it follows that [S 0 = 0], a contradiction. Therefore, it follows [~(S 0 <= 0)].
+
+    - Next, suppose [n = S n']. To show that [~(S (S n') <= S n'],
+      we can assume [S (S n') <= S n'] and derive a contradiction.
+      By [le_S_n], [S (S n') <= S n'] implies that [S n' <= n']. By the induction
+      hypothesis, this is a contradiction.
     []
  *)
 
@@ -196,7 +212,10 @@ Proof.
 Theorem le_Sn_n : forall n,
   ~ (S n <= n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold not. intros H. induction n as [|n'].
+  - inversion H.
+  - apply IHn'. apply le_S_n. apply H.
+Qed.
 (** [] *)
 
 (** Reflexivity and transitivity are the main concepts we'll need for
@@ -212,7 +231,12 @@ Definition symmetric {X: Type} (R: relation X) :=
 Theorem le_not_symmetric :
   ~ (symmetric le).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. unfold symmetric. intros.
+  assert (1 <= 0) as Nonsense.
+  - apply H. apply le_S. apply le_n.
+  - inversion Nonsense.
+Qed.
+
 (** [] *)
 
 (** A relation [R] is _antisymmetric_ if [R a b] and [R b a] together
@@ -226,7 +250,12 @@ Definition antisymmetric {X: Type} (R: relation X) :=
 Theorem le_antisymmetric :
   antisymmetric le.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold antisymmetric. intros a b H. destruct H.
+  - reflexivity.
+  - intros. apply ex_falso_quodlibet. assert (S m <= m) as Nonsense.
+    + apply le_trans with a. apply H0. apply H.
+    + destruct le_Sn_n with m. apply Nonsense.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional *)
@@ -235,7 +264,8 @@ Theorem le_step : forall n m p,
   m <= S p ->
   n <= p.
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  intros. unfold lt in H. apply le_S_n. apply le_trans with m. apply H. apply H0.
+Qed.
 (** [] *)
 
 (** A relation is an _equivalence_ if it's reflexive, symmetric, and
@@ -362,7 +392,10 @@ Theorem rsc_trans :
       refl_step_closure R y z ->
       refl_step_closure R x z.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. generalize dependent z. induction H.
+  - intros. apply H0.
+  - intros. apply rsc_step with y. apply H. apply IHrefl_step_closure. apply H1.
+Qed.
 (** [] *)
 
 (** Then we use these facts to prove that the two definitions of
@@ -374,6 +407,16 @@ Theorem rtc_rsc_coincide :
          forall (X:Type) (R: relation X) (x y : X),
   clos_refl_trans R x y <-> refl_step_closure R x y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. split.
+  - intros. induction H as [x y|x|x y z xy Hxy yz Hyz].
+    + apply rsc_R. apply H.
+    + apply rsc_refl.
+    + apply rsc_trans with y. apply Hxy. apply Hyz.
+  - intros. induction H as [|x y z Rxy Cyz Hxy].
+    + apply rt_refl.
+    + apply rt_trans with y.
+      * apply rt_step.  apply Rxy.
+      * apply Hxy.
+Qed.
 (** [] *)
 

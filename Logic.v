@@ -24,7 +24,7 @@ Require Export MoreCoq.
     implications ([P -> Q]), and with quantified propositions 
     ([forall x, P]).  
 *)
-
+ 
 
 (** In Coq, the type of things that can (potentially) 
     be proven is [Prop]. *)
@@ -208,7 +208,7 @@ Proof.
 Theorem proj2 : forall P Q : Prop, 
   P /\ Q -> Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q H. inversion H as [HP HQ]. apply HQ. Qed.
 (** [] *)
 
 Theorem and_commut : forall P Q : Prop, 
@@ -232,10 +232,13 @@ Theorem and_assoc : forall P Q R : Prop,
 Proof.
   intros P Q R H.
   inversion H as [HP [HQ HR]].
-(* FILL IN HERE *) Admitted.
+  split.
+  - Case "left". split.
+    + apply HP.
+    + apply HQ.
+  - Case "right". apply HR.
+Qed.
 (** [] *)
-
-
 
 (* ###################################################### *)
 (** * Iff *)
@@ -271,13 +274,23 @@ Proof.
 
 Theorem iff_refl : forall P : Prop, 
   P <-> P.
-Proof. 
-  (* FILL IN HERE *) Admitted.
+Proof.
+  intros.
+  split.
+  - intros H. apply H.
+  - intros H. apply H.
+Qed.
 
 Theorem iff_trans : forall P Q R : Prop, 
   (P <-> Q) -> (Q <-> R) -> (P <-> R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q R H I.
+  destruct H as [H0 H1].
+  destruct I as [H2 H3].
+  split.
+  - intros X. apply H2. apply H0. apply X.
+  - intros X. apply H1. apply H3. apply X.
+Qed.
 
 (** Hint: If you have an iff hypothesis in the context, you can use
     [inversion] to break it into two separate implications.  (Think
@@ -337,7 +350,7 @@ Theorem or_commut : forall P Q : Prop,
   P \/ Q  -> Q \/ P.
 Proof.
   intros P Q H.
-  inversion H as [HP | HQ].
+  destruct H as [HP | HQ].
     Case "left". apply or_intror. apply HP.
     Case "right". apply or_introl. apply HQ.  Qed.
 
@@ -351,10 +364,6 @@ Proof.
   inversion H as [HP | HQ].
     Case "left". right. apply HP.
     Case "right". left. apply HQ.  Qed.
-
-
-
-
 
 Theorem or_distributes_over_and_1 : forall P Q R : Prop,
   P \/ (Q /\ R) -> (P \/ Q) /\ (P \/ R).
@@ -371,14 +380,23 @@ Proof.
 Theorem or_distributes_over_and_2 : forall P Q R : Prop,
   (P \/ Q) /\ (P \/ R) -> P \/ (Q /\ R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q R H.
+  destruct H.
+  destruct H0.
+  - left. apply H0.
+  - destruct H.
+    + left. apply H.
+    + right. split. apply H. apply H0.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star, optional (or_distributes_over_and) *)
 Theorem or_distributes_over_and : forall P Q R : Prop,
   P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split. apply or_distributes_over_and_1. apply or_distributes_over_and_2.
+Qed.
 (** [] *)
 
 (* ################################################### *)
@@ -416,17 +434,26 @@ Proof.
 Theorem andb_false : forall b c,
   andb b c = false -> b = false \/ c = false.
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  intros. destruct b.
+  - simpl in H. right. apply H.
+  - left. reflexivity.
+Qed.
 
 Theorem orb_prop : forall b c,
   orb b c = true -> b = true \/ c = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. destruct b.
+  - left. reflexivity.
+  - simpl in H. right. apply H.
+Qed.
 
 Theorem orb_false_elim : forall b c,
   orb b c = false -> b = false /\ c = false.
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  intros. destruct b.
+  - inversion H. 
+  - split. reflexivity. apply H.
+Qed.
 (** [] *)
 
 
@@ -451,7 +478,7 @@ Theorem False_implies_nonsense :
   False -> 2 + 2 = 5.
 Proof. 
   intros contra.
-  inversion contra.  Qed. 
+  destruct contra.  Qed. 
 
 (** How does this work? The [inversion] tactic breaks [contra] into
     each of its possible cases, and yields a subgoal for each case.
@@ -496,7 +523,7 @@ Proof.
     intution is that [True] should be a proposition for which it is
     trivial to give evidence.) *)
 
-(* FILL IN HERE *)
+Inductive True := PTrue.
 (** [] *)
 
 (** However, unlike [False], which we'll use extensively, [True] is
@@ -562,14 +589,19 @@ Proof.
 Theorem contrapositive : forall P Q : Prop,
   (P -> Q) -> (~Q -> ~P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q H G.
+  unfold not in G. unfold not.
+  intro F. apply G. apply H. apply F.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star (not_both_true_and_false) *)
 Theorem not_both_true_and_false : forall P : Prop,
   ~ (P /\ ~P).
 Proof. 
-  (* FILL IN HERE *) Admitted.
+  intros. unfold not. intros. destruct H.
+  apply H0. apply H.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, advanced (informal_not_PNP) *)
@@ -611,11 +643,56 @@ Definition excluded_middle := forall P:Prop,
   P \/ ~P.
 Definition de_morgan_not_and_not := forall P Q:Prop, 
   ~(~P /\ ~Q) -> P\/Q.
-Definition implies_to_or := forall P Q:Prop, 
-  (P->Q) -> (~P\/Q). 
+Definition implies_to_or :=
+  forall P Q:Prop, 
+    (P->Q) -> (~P\/Q).
 
-(* FILL IN HERE *)
-(** [] *)
+Theorem pierce_classic : peirce -> classic.
+Proof.
+  intros. unfold peirce in H.
+  unfold classic. intros.
+  unfold not in H0. apply H with False. intros. apply H0 in H1. destruct H1.
+Qed.
+
+Theorem classic_excluded_middle : classic -> excluded_middle.
+Proof.
+  unfold classic. unfold excluded_middle. intros.
+  apply H. unfold not. intros. apply H0. right. intros.
+  apply H0. left. apply H1.
+Qed.
+
+Theorem excluded_middle_de_morgan : excluded_middle -> de_morgan_not_and_not.
+Proof.
+  unfold excluded_middle. unfold de_morgan_not_and_not. intros.
+  unfold not in H0. destruct (H P).
+  - left. apply H1.
+  - right. destruct (H Q).
+    + apply H2.
+    + destruct H0. split. apply H1. apply H2.
+Qed.
+
+Theorem de_morgan_not_implies_to_or : de_morgan_not_and_not -> implies_to_or.
+Proof.
+  unfold de_morgan_not_and_not. unfold implies_to_or. intros.
+  destruct (H (~P) Q).
+  - unfold not. intros. destruct H1. apply contrapositive in H0.
+    + apply H1. apply H0.
+    + unfold not. apply H2.
+  - left. apply H1.
+  - right. apply H1.
+Qed.
+
+Theorem implies_to_or_peirce : implies_to_or -> peirce.
+Proof.
+  unfold implies_to_or. unfold peirce. intros H. intros.
+  destruct (H P P).
+  - intros X. apply X.
+  - apply H0. intros. destruct H1. apply H2.
+  - apply H1.
+Qed.
+
+  
+(** [] *) 
 
 (** **** Exercise: 3 stars (excluded_middle_irrefutable) *)
 (** This theorem implies that it is always safe to add a decidability
@@ -625,7 +702,9 @@ we would have both [~ (P \/ ~P)] and [~ ~ (P \/ ~P)], a contradiction. *)
 
 Theorem excluded_middle_irrefutable:  forall (P:Prop), ~ ~ (P \/ ~ P).  
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold not. intros.
+  apply H. right. intros. apply H. left. apply H0.
+Qed.
 
 
 (* ########################################################## *)
@@ -669,15 +748,23 @@ Proof.
 Theorem false_beq_nat : forall n m : nat,
      n <> m ->
      beq_nat n m = false.
-Proof. 
-  (* FILL IN HERE *) Admitted.
+Proof.
+  intro n.
+  induction n as [|n'].
+  - destruct m. intros. destruct H. reflexivity. reflexivity.
+  - destruct m. reflexivity. intros. simpl. unfold not in H.
+    apply IHn'. unfold not. intros. apply H. rewrite H0. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (beq_nat_false) *)
 Theorem beq_nat_false : forall n m,
   beq_nat n m = false -> n <> m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros. rewrite H0 in H. rewrite <- beq_nat_refl in H.
+  inversion H.
+Qed.
+
 (** [] *)
 
 
